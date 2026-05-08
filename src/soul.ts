@@ -76,31 +76,64 @@ export function initSoulFiles(config: PersonaConfig): SoulFiles {
 
 // ── Build prompt context from soul files ────────────────────────────
 
+/**
+ * Sizing for the assembled context. Lets callers trade detail for
+ * token budget — Pyre's Context Budget Engine asks for `minimal`
+ * when the persona slot has tight budget, `standard` for routine
+ * chat, `full` for deep-context turns where the agent needs
+ * Persona's accumulated journal notes too.
+ *
+ *   minimal  ~400 tokens — personality + role only. Drops style,
+ *                          working-style, and journal layers. Just
+ *                          the immutable Core Principles + the
+ *                          active role's domain expertise.
+ *   standard ~1-2K tokens — all soul files (personality + style +
+ *                          working-style + role) but skips the
+ *                          journal merge. The default.
+ *   full     ~3-16K tokens — soul files PLUS the journal-derived
+ *                          notes layered under each section
+ *                          ("learned" blocks). Use when the agent
+ *                          needs to reason about how it has
+ *                          adapted over time.
+ */
+export type ContextSize = 'minimal' | 'standard' | 'full';
+
 export function buildSoulContext(
   files: SoulFiles,
-  layers?: { journal?: SoulFiles; role?: string },
+  layers?: { journal?: SoulFiles; role?: string; size?: ContextSize },
 ): string {
+  const size: ContextSize = layers?.size ?? 'standard';
   const sections: string[] = [];
 
   // Soul + journal layered per-section. Journal is Persona's auto-derived
   // notes (from applied evolution proposals); soul is user-territory.
   // Showing them together keeps the prompt coherent without commingling
-  // ownership in the underlying files.
+  // ownership in the underlying files. Skipped entirely on 'minimal'
+  // and 'standard' so callers asking for tighter contexts don't get
+  // surprised by the journal's bloat.
+  const includeJournal = size === 'full';
   const merge = (base: string, journal: string | undefined, header: string): string => {
     const baseT = base.trim();
-    const jT = (journal ?? '').trim();
+    const jT = includeJournal ? (journal ?? '').trim() : '';
     if (!baseT && !jT) return '';
     const body = jT ? `${baseT}${baseT ? '\n\n' : ''}<!-- learned -->\n${jT}` : baseT;
     return `## ${header}\n${body}`;
   };
 
   const personality = merge(files.personality, layers?.journal?.personality, 'Personality');
-  const style = merge(files.style, layers?.journal?.style, 'Communication Style');
-  const skill = merge(files.skill, layers?.journal?.skill, 'Working Style');
-
   if (personality) sections.push(personality);
-  if (style) sections.push(style);
-  if (skill) sections.push(skill);
+
+  // Style + working-style only fire at standard / full. Minimal mode
+  // intentionally drops them — those sections describe HOW Pyre
+  // talks and works, but on a tight budget the immutable Personality
+  // section + the active Role carry the load. Style/working preferences
+  // can re-surface on the next turn when budget allows.
+  if (size !== 'minimal') {
+    const style = merge(files.style, layers?.journal?.style, 'Communication Style');
+    const skill = merge(files.skill, layers?.journal?.skill, 'Working Style');
+    if (style) sections.push(style);
+    if (skill) sections.push(skill);
+  }
 
   if (layers?.role) {
     const roleT = layers.role.trim();
