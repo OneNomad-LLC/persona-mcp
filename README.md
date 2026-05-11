@@ -218,8 +218,8 @@ Add to your client's MCP config:
 ### From Source
 
 ```bash
-git clone https://github.com/OneNomad-LLC/persona.git
-cd persona
+git clone https://github.com/OneNomad-LLC/persona-mcp.git
+cd persona-mcp
 npm install
 npm run build
 ```

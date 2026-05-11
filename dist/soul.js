@@ -61,30 +61,40 @@ export function initSoulFiles(config) {
     }
     return files;
 }
-// ── Build prompt context from soul files ────────────────────────────
 export function buildSoulContext(files, layers) {
+    const size = layers?.size ?? 'standard';
     const sections = [];
     // Soul + journal layered per-section. Journal is Persona's auto-derived
     // notes (from applied evolution proposals); soul is user-territory.
     // Showing them together keeps the prompt coherent without commingling
-    // ownership in the underlying files.
+    // ownership in the underlying files. Skipped entirely on 'minimal'
+    // and 'standard' so callers asking for tighter contexts don't get
+    // surprised by the journal's bloat.
+    const includeJournal = size === 'full';
     const merge = (base, journal, header) => {
         const baseT = base.trim();
-        const jT = (journal ?? '').trim();
+        const jT = includeJournal ? (journal ?? '').trim() : '';
         if (!baseT && !jT)
             return '';
         const body = jT ? `${baseT}${baseT ? '\n\n' : ''}<!-- learned -->\n${jT}` : baseT;
         return `## ${header}\n${body}`;
     };
     const personality = merge(files.personality, layers?.journal?.personality, 'Personality');
-    const style = merge(files.style, layers?.journal?.style, 'Communication Style');
-    const skill = merge(files.skill, layers?.journal?.skill, 'Working Style');
     if (personality)
         sections.push(personality);
-    if (style)
-        sections.push(style);
-    if (skill)
-        sections.push(skill);
+    // Style + working-style only fire at standard / full. Minimal mode
+    // intentionally drops them — those sections describe HOW Pyre
+    // talks and works, but on a tight budget the immutable Personality
+    // section + the active Role carry the load. Style/working preferences
+    // can re-surface on the next turn when budget allows.
+    if (size !== 'minimal') {
+        const style = merge(files.style, layers?.journal?.style, 'Communication Style');
+        const skill = merge(files.skill, layers?.journal?.skill, 'Working Style');
+        if (style)
+            sections.push(style);
+        if (skill)
+            sections.push(skill);
+    }
     if (layers?.role) {
         const roleT = layers.role.trim();
         if (roleT)

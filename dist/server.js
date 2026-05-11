@@ -49,15 +49,17 @@ function processUserMessage(message) {
     setSessionState(session);
 }
 // ── MCP Server ────────────────────────────────────────────────────
-function buildLayeredContext(roleNameOverride) {
+function buildLayeredContext(roleNameOverride, size = 'standard') {
     const files = readAllSoulFiles(config);
-    const journal = readAllJournalFiles(config);
+    // Skip the journal disk read entirely for non-full sizes —
+    // buildSoulContext won't include it, no point paying the IO.
+    const journal = size === 'full' ? readAllJournalFiles(config) : undefined;
     const activeRole = roleNameOverride ?? getActiveRole(config);
     const roleContent = activeRole ? readRole(config, activeRole) : '';
-    return buildSoulContext(files, { journal, role: roleContent });
+    return buildSoulContext(files, { journal, role: roleContent, size });
 }
 const soulContext = buildLayeredContext();
-const server = new McpServer({ name: 'persona', version: '2.3.0' }, {
+const server = new McpServer({ name: 'persona', version: '2.4.0' }, {
     instructions: [
         '# Persona',
         'Adaptive personality. Honest, not agreeable. Style emerges from interactions.',
@@ -74,27 +76,37 @@ const server = new McpServer({ name: 'persona', version: '2.3.0' }, {
 // ─────────────────────────────────────────────────────────────────────
 server.registerTool('persona_context', {
     title: 'Get Context',
-    description: 'Full personality context: soul files + adaptations + brain state. Pass adaptationsOnly=true for just the adaptive directives.',
+    description: 'Full personality context: soul files + adaptations + brain state. Pass adaptationsOnly=true for just the adaptive directives. Pass size to control verbosity — \'minimal\' (~400 tokens, just core principles + role) for tight context budgets, \'standard\' (default, ~1-2K tokens) for routine chat, \'full\' (~3-16K tokens) when you need accumulated journal notes too.',
     inputSchema: z.object({
         category: z.string().optional().describe('Topic for category-specific adaptations.'),
         userMessage: z.string().optional().describe('Process through brain systems first.'),
         adaptationsOnly: z.boolean().optional().describe('If true, return only adaptations (not soul files).'),
         role: z.string().optional().describe('Per-call role override (e.g. "developer"). Falls back to active role then no role.'),
+        size: z.enum(['minimal', 'standard', 'full']).optional().describe('Context verbosity. minimal=~400 tokens (personality + role only); standard=~1-2K tokens (all soul files, no journal) [default]; full=~3-16K tokens (soul + journal-derived "learned" notes). Pyre\'s Context Budget Engine sets this based on the persona slot\'s allocated budget.'),
     }),
-}, async ({ category, userMessage, adaptationsOnly, role }) => {
+}, async ({ category, userMessage, adaptationsOnly, role, size }) => {
     if (userMessage)
         processUserMessage(userMessage);
+    const resolvedSize = size ?? 'standard';
     const adaptations = getAdaptations(config, category);
     // Adaptations-only mode (replaces old persona_adapt tool)
     if (adaptationsOnly) {
         return text(adaptations || 'No adaptations yet. Record signals to build a profile.');
     }
-    const soul = buildLayeredContext(role);
-    const parts = [soul, adaptations].filter(Boolean);
-    const brainState = getBrainStateSummary();
-    if (brainState)
-        parts.push(brainState);
-    return text(parts.join('\n\n') || 'No personality configured.');
+    const soul = buildLayeredContext(role, resolvedSize);
+    // Brain state and adaptations are dropped on minimal — the sizing
+    // contract is "essentials only," and brain state + adaptive
+    // directives are both elastic content. Standard and full include
+    // them as before.
+    const parts = [soul];
+    if (resolvedSize !== 'minimal') {
+        if (adaptations)
+            parts.push(adaptations);
+        const brainState = getBrainStateSummary();
+        if (brainState)
+            parts.push(brainState);
+    }
+    return text(parts.filter(Boolean).join('\n\n') || 'No personality configured.');
 });
 server.registerTool('persona_state', {
     title: 'Emotional State',

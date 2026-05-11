@@ -6,8 +6,8 @@
     "name": "Matt Stvartak",
     "email": "matt@onenomad.dev"
   },
-  "homepage": "https://github.com/OneNomad-LLC/persona",
-  "repository": "https://github.com/OneNomad-LLC/persona",
-  "license": "BUSL-1.1",
+  "homepage": "https://github.com/OneNomad-LLC/persona-mcp",
+  "repository": "https://github.com/OneNomad-LLC/persona-mcp",
+  "license": "Apache-2.0",
   "keywords": ["personality", "ai", "mcp", "adaptation", "emotional-intelligence", "big-five"]
 }
