@@ -33,24 +33,24 @@ export declare class CloudStorageAdapter implements StorageAdapter {
     appendSignal(signal: BehavioralSignal, maxSignals: number): void;
     listSignals(): BehavioralSignal[];
     clearSignals(): void;
-    appendSession(_session: SessionSummary): void;
+    appendSession(session: SessionSummary): void;
     listSessions(): SessionSummary[];
     readSoul(name: SoulName): string;
-    writeSoul(_name: SoulName, _content: string): void;
+    writeSoul(name: SoulName, content: string): void;
     listSouls(): Array<{
         name: SoulName;
         content: string;
     }>;
     readJournal(name: JournalName): string;
-    writeJournal(_name: JournalName, _content: string): void;
-    deleteJournal(_name: JournalName): boolean;
+    writeJournal(name: JournalName, content: string): void;
+    deleteJournal(name: JournalName): boolean;
     listJournals(): Array<{
         name: JournalName;
         content: string;
     }>;
     readRole(name: string): string;
-    writeRole(_name: string, _content: string): void;
-    deleteRole(_name: string): boolean;
+    writeRole(name: string, content: string): void;
+    deleteRole(name: string): boolean;
     listRoles(): Array<{
         name: string;
         content: string;
