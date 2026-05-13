@@ -220,8 +220,8 @@ Add to your client's MCP config:
 ```bash
 git clone https://github.com/OneNomad-LLC/persona-mcp.git
 cd persona-mcp
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 Then point your MCP client at `dist/server.js`:
@@ -437,7 +437,7 @@ Everything sits at `~/.claude/persona/`. Soul files are plain markdown. Signals 
 
 ## Pairs Well With: Engram
 
-If Persona is the personality, [Engram](https://github.com/OneNomad-LLC/engram) is the brain.
+If Persona is the personality, [Engram](https://github.com/OneNomad-LLC/engram-mcp) is the brain.
 
 Persona handles *how* the agent talks to you. Engram handles *what* it remembers. They solve different problems and work best together.
 
@@ -477,21 +477,21 @@ Schema lives in `migrations/postgres/001_init.sql`. Six tables, all keyed by `te
 Run migrations with:
 
 ```sh
-DATABASE_URL=postgres://user:pass@host/db npm run migrate
+DATABASE_URL=postgres://user:pass@host/db pnpm run migrate
 ```
 
 The runner tracks applied versions in a `persona_migrations` table and is safe to re-run.
 
 ### Smoke test
 
-`npm run smoke` exercises the active backend end-to-end (append signal, read profile on empty tenant, write and round-trip a soul file).
+`pnpm run smoke` exercises the active backend end-to-end (append signal, read profile on empty tenant, write and round-trip a soul file).
 
 ```sh
 # File mode — uses a fresh tmpdir, does not touch real data
-npm run smoke
+pnpm run smoke
 
 # Postgres mode — runs migrations first, uses TENANT_ID="smoke-<uuid>"
-STORAGE_BACKEND=postgres DATABASE_URL=postgres://... npm run smoke
+STORAGE_BACKEND=postgres DATABASE_URL=postgres://... pnpm run smoke
 ```
 
 Local development should keep `STORAGE_BACKEND` unset (or `file`). The Postgres backend is for hosted environments where many users share infrastructure but each must see only their own personality data.
