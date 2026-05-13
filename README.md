@@ -180,7 +180,7 @@ Persona is an MCP server. It works with anything that supports the Model Context
 ### Claude Code
 
 ```bash
-claude mcp add persona -- npx @onenomad/persona-mcp
+claude mcp add persona -- npx @onenomaddev/persona-mcp
 ```
 
 ### Claude Desktop
@@ -192,7 +192,7 @@ Add to your Claude Desktop config file. On macOS it's at `~/Library/Application 
   "mcpServers": {
     "persona": {
       "command": "npx",
-      "args": ["@onenomad/persona-mcp"]
+      "args": ["@onenomaddev/persona-mcp"]
     }
   }
 }
@@ -209,7 +209,7 @@ Add to your client's MCP config:
   "mcpServers": {
     "persona": {
       "command": "npx",
-      "args": ["@onenomad/persona-mcp"]
+      "args": ["@onenomaddev/persona-mcp"]
     }
   }
 }
@@ -503,10 +503,10 @@ OneNomad's) you can point Persona at it with two commands.
 
 ```sh
 # 1. Install the package as usual.
-pnpm add -g @onenomad/persona-mcp     # or `npm i -g`, `npx`, etc.
+pnpm add -g @onenomaddev/persona-mcp  # or `npm i -g`, `npx`, etc.
 
 # 2. Log in. The URL is supplied — there is no default.
-persona-mcp login https://your-pyre-server.example.com
+persona-mcp login https://getpyre.ai
 # → Visit https://.../dashboard/devices/PYRE-XXXX-XXXX to authorize.
 #   Code: PYRE-XXXX-XXXX
 ```
@@ -522,9 +522,9 @@ changes.
 Three ways to supply the URL to `login`, in priority order:
 
 ```sh
-persona-mcp login https://pyre.example.com         # positional
-persona-mcp login --server https://pyre.example.com # flag
-PYRE_API_URL=https://pyre.example.com persona-mcp login  # env
+persona-mcp login https://getpyre.ai         # positional
+persona-mcp login --server https://getpyre.ai # flag
+PYRE_API_URL=https://getpyre.ai persona-mcp login  # env
 ```
 
 If none is provided, login exits with an error. There is no hardcoded
@@ -545,7 +545,7 @@ either field can be overridden individually:
 
 ```sh
 PERSONA_API_KEY=sk_pyre_ci_xxx persona-mcp
-PERSONA_API_URL=https://staging.pyre.example.com persona-mcp
+PERSONA_API_URL=https://staging.getpyre.ai persona-mcp
 ```
 
 The env value wins over the matching field in `credentials.json`.

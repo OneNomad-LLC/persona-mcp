@@ -1,6 +1,6 @@
 {
-  "name": "@onenomad/persona-mcp",
-  "version": "1.0.0",
+  "name": "@onenomaddev/persona-mcp",
+  "version": "1.0.0-beta.1",
   "mcpName": "io.github.onenomad-llc/persona-mcp",
   "description": "Persona MCP server for Claude Code -- evolving personality, behavioral signals, style adaptations, and soul file management.",
   "type": "module",
@@ -21,6 +21,9 @@
   },
   "homepage": "https://github.com/OneNomad-LLC/persona-mcp",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "clean": "rm -rf dist",
     "build": "rm -rf dist && tsc",
