@@ -101,7 +101,21 @@ export class FileStorageAdapter implements StorageAdapter {
   private journalPath(name: JournalName): string {
     return join(this.dataDir, 'journal', JOURNAL_FILE_NAMES[name]);
   }
+  // Defense-in-depth: the primary role-name validation lives in role.ts
+  // (assertSafeRoleName at the MCP tool boundary). This re-check stops a
+  // future code path that imports the storage adapter directly from
+  // sneaking a `..` through. Mirrored regex — keep in sync with role.ts.
+  private static readonly SAFE_ROLE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
+  private assertSafeRoleName(name: string): void {
+    if (!FileStorageAdapter.SAFE_ROLE_NAME_RE.test(name)) {
+      throw new Error(
+        `persona-mcp: file-adapter refused unsafe role name. Got: ${JSON.stringify(name).slice(0, 80)}`,
+      );
+    }
+  }
+
   private rolePath(name: string): string {
+    this.assertSafeRoleName(name);
     return join(this.dataDir, 'roles', name, 'ROLE.md');
   }
   private rolesDir(): string {
@@ -264,12 +278,14 @@ export class FileStorageAdapter implements StorageAdapter {
   }
 
   writeRole(name: string, content: string): void {
+    this.assertSafeRoleName(name);
     const dir = join(this.rolesDir(), name);
     ensureDir(dir);
     writeFileSync(join(dir, 'ROLE.md'), content, 'utf-8');
   }
 
   deleteRole(name: string): boolean {
+    this.assertSafeRoleName(name);
     const dir = join(this.rolesDir(), name);
     if (!existsSync(dir)) return false;
     rmSync(dir, { recursive: true, force: true });

@@ -14,6 +14,8 @@ export declare class FileStorageAdapter implements StorageAdapter {
     private sessionHistoryPath;
     private soulPath;
     private journalPath;
+    private static readonly SAFE_ROLE_NAME_RE;
+    private assertSafeRoleName;
     private rolePath;
     private rolesDir;
     getProfile(): BehavioralProfile | null;

@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-17
+
+### Security
+
+- **Path traversal in role name handling.** MCP tools `persona_role_read`,
+  `persona_role_set`, `persona_role_edit`, and `persona_role_clear`
+  accepted arbitrary strings as the `name` parameter and passed them
+  directly into filesystem path joins under both `dataDir/roles/<name>/`
+  and the bundled `presets/roles/<name>/` directories. A name like
+  `../../etc/cron.d/foo` would have resolved outside the intended
+  directory, letting an MCP caller read or write arbitrary files the
+  process had access to. Added `assertSafeRoleName(name)` at the
+  `role.ts` entry points (`readRole`, `writeRole`, `setActiveRole`) and
+  a defense-in-depth check inside `FileStorageAdapter.rolePath` /
+  `writeRole` / `deleteRole`. Whitelist: `^[a-z0-9][a-z0-9_-]{0,62}$`.
+  Existing bundled role names (`developer`, `designer`, `pm`, etc.) all
+  satisfy the whitelist; no behavior change for valid callers.
+
+### Changed
+
+- **Storage routing is now visible.** `createStorage()` writes one
+  stderr line at startup naming the resolved backend and why
+  (`STORAGE_BACKEND` env, credentials-file auto-route, or default
+  fallback). Previously the credentials-file auto-route was silent —
+  benchmarks and CI runs would hit the wire instead of using local
+  storage and have no way to tell from the logs. Stdout is untouched
+  (the MCP stdio frame stays clean).
+- **`PERSONA_NO_AUTO_CLOUD=1`** opt-out env added. Set it to skip the
+  `~/.pyre/credentials.json` auto-route even when the file exists.
+  Designed for benchmark adapters, CI, and local-dev runs where
+  "explicit > implicit" matters. Equivalent to but lighter than
+  `STORAGE_BACKEND=file`.
+
+### Notes
+
+- Backwards-compatible. No file-format or schema changes. The role-name
+  validation rejects inputs that were already invalid in practice
+  (no real role name needs `/` or `..`).
+- README has new section "Disable cloud auto-routing" documenting the
+  env var + the new stderr log line.
+
 ## [1.1.0] - 2026-05-16
 
 Driven by [EvoBench](https://github.com/OneNomad-LLC/evobench) v0.1.2
