@@ -562,6 +562,26 @@ persona-mcp logout      # removes ~/.pyre/credentials.json, idempotent
 | --- | --- | --- |
 | `PYRE_CREDENTIALS_FILE` | `~/.pyre/credentials.json` | Override where credentials live. File is mode 0600 in a 0700 directory. |
 
+### Disable cloud auto-routing
+
+By default, if `~/.pyre/credentials.json` exists, persona-mcp routes
+storage to PYRE Cloud. This is convenient after `persona-mcp login`
+but surprising in benchmarks, CI, and local-dev runs where you want
+to guarantee no traffic hits the wire. Set `PERSONA_NO_AUTO_CLOUD=1`
+to skip the credentials-file check and fall through to the local
+file adapter even when credentials exist.
+
+```sh
+PERSONA_NO_AUTO_CLOUD=1 persona-mcp        # ignore credentials.json
+STORAGE_BACKEND=file persona-mcp           # equivalent, more explicit
+```
+
+Whichever storage backend resolves, the server writes one line to
+stderr at startup naming the decision (`persona-mcp: storage=cloud
+(auto-routed via ~/.pyre/credentials.json) · …`) so the routing is
+never silent. If you see cloud routing when you expected local, that
+line tells you why.
+
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE).

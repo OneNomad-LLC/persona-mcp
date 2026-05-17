@@ -4,6 +4,32 @@ import { fileURLToPath } from 'node:url';
 import type { PersonaConfig, RoleFile } from './types.js';
 import { getStorage } from './storage/index.js';
 
+// Role names are user-controlled and flow into filesystem path joins
+// (rolePath(name) under both dataDir/roles/ and presets/roles/). An
+// unvalidated `..` or `/` here would let an MCP caller read or write
+// outside the intended directory. The whitelist is intentionally narrow:
+// kebab-case alphanumerics with `-` or `_`, 1-63 chars, must not start
+// with a dash. Reject everything else — including absolute paths, NUL
+// bytes, dotfiles, control characters, and any traversal sequence.
+const SAFE_ROLE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,62}$/;
+
+export function isSafeRoleName(name: unknown): name is string {
+  return typeof name === 'string' && SAFE_ROLE_NAME_RE.test(name);
+}
+
+/**
+ * Throw a recognizable error for an unsafe role name. Call this at MCP
+ * tool entry points so malformed input fails fast with a clear message
+ * rather than silently resolving to a wrong path.
+ */
+export function assertSafeRoleName(name: unknown): asserts name is string {
+  if (!isSafeRoleName(name)) {
+    throw new Error(
+      `persona-mcp: invalid role name. Role names must match /^[a-z0-9][a-z0-9_-]{0,62}$/. Got: ${JSON.stringify(name).slice(0, 80)}`,
+    );
+  }
+}
+
 /**
  * Role layer — domain overlays applied on top of the soul.
  *
@@ -48,6 +74,7 @@ function bundledRolePath(name: string): string {
 // ── Read ────────────────────────────────────────────────────────────
 
 export function readRole(_config: PersonaConfig, name: string): string {
+  assertSafeRoleName(name);
   // User override takes precedence over bundled default
   const override = getStorage().readRole(name);
   if (override) return override;
@@ -85,6 +112,7 @@ export function listRoles(_config: PersonaConfig): RoleFile[] {
 // ── Write (user-edited custom roles) ────────────────────────────────
 
 export function writeRole(_config: PersonaConfig, name: string, content: string): void {
+  assertSafeRoleName(name);
   getStorage().writeRole(name, content);
 }
 
@@ -95,6 +123,7 @@ export function getActiveRole(_config: PersonaConfig): string | null {
 }
 
 export function setActiveRole(_config: PersonaConfig, name: string | null): void {
+  if (name !== null) assertSafeRoleName(name);
   getStorage().putActiveRole(name);
 }
 
